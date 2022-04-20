@@ -118,5 +118,6 @@ class SiteBase(ABC):
                 'INSERT INTO scrap (uri, title, abstract, contents, body, bibliography) VALUES (?, ?, ?, ?, ?, ?)',
                 (page_uri, title, abstract, contents, body, bibliography),
             )
+            conn.commit()
             time.sleep(0.25)
         print('All page scrapped.')

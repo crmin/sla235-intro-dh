@@ -1,10 +1,9 @@
 from wikis import SEP, IEP
 
+
 def main():
-    resp = SEP()
-    # resp.scrap()
-    print(resp.get_page_uris())
-    print(len(resp.get_page_uris()))
+    sep = SEP()
+    sep.scrap('./sep.db')
 
 
 if __name__ == '__main__':
