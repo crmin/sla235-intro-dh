@@ -257,11 +257,70 @@ class IEP(SiteBase):
         """
         soup = BeautifulSoup(html_body, 'lxml')  # 본문만 markdown으로 변환하기 위함
         md = markdownify(soup.find(class_='entry-content').decode_contents(), strip=['a', 'em'], heading_style='ATX')
-        # _toc_without_title()가 더 범용적으로 동작하지만 _toc_with_title()가 특정 상황에서 더 정확한 결과를 반환할 것이라고 예측
+        # _contents_without_title()가 더 범용적으로 동작하지만 _contents_with_title()가 특정 상황에서 더 정확한 결과를 반환할 것이라고 예측
         if '### Table of Contents' in md:
             return self._toc_with_title(md)
         else:
             return self._toc_without_title(md)
+
+    def _body_with_title(self, md_body: str) -> str:
+        """Table of Contents title이 존재하는 경우 body 파싱
+
+        Args:
+            md_body (str): page markdown body
+
+        Returns:
+            str: 목차 문자열 (markdown)
+        """
+        _, after_toc = md_body.split('### Table of Contents')
+        body_lines = []
+        toc_start = False  # list의 종료를 확인하기 위한 flag
+        body_start = False  # list가 종료되면 True로 변경되어서 본문임을 확인할 수 있도록 하는 flag
+        for line in after_toc.split('\n'):
+            line = line.strip()
+            if len(line) > 0 and line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
+                # *, -, +: ul / 0, 1, 2, .., 9: ol
+                if not toc_start:
+                    toc_start = True  # list가 시작되면 flag를 True로 변경
+            elif toc_start:  # list가 시작되었는데 지금 읽은 문자열이 list가 아니라면 toc가 종료되었다고 판단
+                body_start = True  # -> 이후부터 본문 내용
+            if not body_start:  # 아직 본문이 아니라면 아무 작업도 수행하지 않고 계속 진행
+                continue
+            if line.startswith('#') and 'reference' in line.lower():  # Reference 시작하면 탈출
+                break
+            if len(line) == 1 and line[0] == '>':  # 인용문인데 내용이 없는 경우 무시하도록 함
+                continue
+            body_lines.append(line)
+        return '\n'.join(body_lines).strip()
+
+    def _body_without_title(self, md_body: str) -> str:
+        """Table of Contents title이 존재하지 않는 경우 body 파싱
+
+        Args:
+            md_body (str): page markdown body
+
+        Returns:
+            str: 목차 문자열 (markdown)
+        """
+        body_lines = []
+        toc_start = False  # list의 종료를 확인하기 위한 flag
+        body_start = False  # list가 종료되면 True로 변경되어서 본문임을 확인할 수 있도록 하는 flag
+        for line in md_body.split('\n'):
+            line = line.strip()
+            if len(line) > 0 and line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
+                # *, -, +: ul / 0, 1, 2, .., 9: ol
+                if not toc_start:
+                    toc_start = True  # list가 시작되면 flag를 True로 변경
+            elif toc_start:  # list가 시작되었는데 지금 읽은 문자열이 list가 아니라면 toc가 종료되었다고 판단
+                body_start = True  # -> 이후부터 본문 내용
+            if not body_start:  # 아직 본문이 아니라면 아무 작업도 수행하지 않고 계속 진행
+                continue
+            if line.startswith('#') and 'reference' in line.lower():  # Reference 시작하면 탈출
+                break
+            if len(line) == 1 and line[0] == '>':  # 인용문인데 내용이 없는 경우 무시하도록 함
+                continue
+            body_lines.append(line)
+        return '\n'.join(body_lines).strip()
 
     def get_body_in_page(self, html_body: str) -> str:
         """page에서 본문(body) 추출
@@ -272,7 +331,17 @@ class IEP(SiteBase):
         Returns:
             str: page의 본문
         """
-        pass
+        soup = BeautifulSoup(html_body, 'lxml')  # 본문만 markdown으로 변환하기 위함
+        md = markdownify(
+            soup.find(class_='entry-content').decode_contents(),
+            strip=['a', 'img'],
+            heading_style='ATX'
+        )
+        # _body_without_title()가 더 범용적으로 동작하지만 _body_with_title()가 특정 상황에서 더 정확한 결과를 반환할 것이라고 예측
+        if '### Table of Contents' in md:
+            return self._body_with_title(md)
+        else:
+            return self._body_without_title(md)
 
     def get_bibliography_in_page(self, html_body: str) -> str:
         """page에서 인용문(bibliography) 추출
