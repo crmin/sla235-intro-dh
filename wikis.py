@@ -104,7 +104,7 @@ class IEP(SiteBase):
         """
         links = []
         if verbose:
-            print('scrap contents: ', end='')
+            print(self.__class__.__name__, 'scrap contents: ', end='')
             sys.stdout.flush()
         for sub_group in string.ascii_lowercase:
             if verbose:

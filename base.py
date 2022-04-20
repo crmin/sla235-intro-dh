@@ -97,17 +97,17 @@ class SiteBase(ABC):
         Args:
             path (str): 스크래핑 결과가 저장될 파일 경로, sqlite3로 저장됨
         """
-        print('Create database file')
+        print(self.__class__.__name__, 'Create database file')
         conn = sqlite3.connect(path, isolation_level=None)
         cur = conn.cursor()
         cur.execute(self.TABLE_CREATION_SQL)
 
         page_uris = self.get_page_uris()
         page_uris_len = len(page_uris)
-        print(f'Get {page_uris_len} page uris')
+        print(self.__class__.__name__, f'Get {page_uris_len} page uris')
 
         for idx, page_uri in enumerate(page_uris):
-            print(f'> [{idx + 1}/{page_uris_len}] Scrap {page_uri}')
+            print(self.__class__.__name__, f'> [{idx + 1}/{page_uris_len}] Scrap {page_uri}')
             resp = self.session.get(page_uri)
             title = self.get_title_in_page(resp.text)
             abstract = self.get_abstract_in_page(resp.text)
@@ -120,4 +120,4 @@ class SiteBase(ABC):
             )
             conn.commit()
             time.sleep(0.25)
-        print('All page scrapped.')
+        print(self.__class__.__name__, 'All page scrapped.')
