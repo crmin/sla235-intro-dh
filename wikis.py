@@ -352,4 +352,22 @@ class IEP(SiteBase):
         Returns:
             str: page의 인용문
         """
-        pass
+        soup = BeautifulSoup(html_body, 'lxml')  # 본문만 markdown으로 변환하기 위함
+        md = markdownify(
+            soup.find(class_='entry-content').decode_contents(),
+            strip=['a', 'img', 'em'],
+            heading_style='ATX'
+        )
+        lines = []
+        is_reference = False
+        for line in md.split('\n'):
+            if line.startswith('#') and 'reference' in line.lower():
+                is_reference = True
+                continue  # 해당 line은 title이므로 다음 line부터 작업
+            if not is_reference:
+                continue
+
+            if line.startswith('#'):  # reference가 끝남
+                break
+            lines.append(line)
+        return '\n'.join(lines).strip()
