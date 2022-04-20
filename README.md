@@ -27,3 +27,13 @@
     body TEXT,
     bibliography TEXT
     ```
+
+## Structure
+*  `base.py`
+    - wiki class의 abc(Abstract Base Class)가 작성되어있음.
+    - 구현체에서 구현한 메소드들을 이용해서 스크래핑을 진행하는 `scrap()` 메소드가 정의되어있음.
+* `wikis.py`
+    - wiki별로 파싱 메소드들이 작성되어있음.
+* `scrap.py`
+    - 해당 프로젝트의 entry point
+    - 작성된 메소드들을 이용해서 multi threading으로 스크래핑 진행
