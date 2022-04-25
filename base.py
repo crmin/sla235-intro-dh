@@ -1,8 +1,10 @@
 import sqlite3
 import time
 from abc import ABC, abstractmethod
+from io import StringIO
 
 import requests
+import yaml
 
 
 class SiteBase(ABC):
@@ -121,3 +123,20 @@ class SiteBase(ABC):
             conn.commit()
             time.sleep(0.25)
         print(self.__class__.__name__, 'All page scrapped.')
+
+    def _convert_md_to_dict(self, md: str) -> dict:
+        """markdown 형태의 list를 dict로 변환
+
+        Args:
+            md (str): list markdown, list symbol은 모두 hyphen(-)이어야 함
+
+        Returns:
+            dict: dict로 파싱된 결과
+        """
+        # md 리스트를 yaml로 읽어서 dict로 변환
+        # 마지막에 개행 문자가 없으면 마지막 항목은 dict type으로 생성되지 않음
+        # 마지막에 개행 문자가 여러개 있으면 yaml 파싱에서 에러 발생
+        # 모든 trailing new line을 없앤 후 하나만 추가하는 방식으로 함
+        prettified_md = (md.strip() + '\n').replace('\n', ':\n').replace('\t', '  ')
+        yaml_list = yaml.load(StringIO(prettified_md), yaml.FullLoader)
+        return yaml_list

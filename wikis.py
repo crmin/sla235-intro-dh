@@ -57,7 +57,8 @@ class SEP(SiteBase):
             str: page의 목차
         """
         soup = BeautifulSoup(html_body, 'lxml')
-        return markdownify(soup.find(id='toc').decode_contents(), strip=['a', 'hr']).strip()
+        contents_md = markdownify(soup.find(id='toc').decode_contents(), strip=['a', 'hr'], bullets='-').strip()
+        return self._convert_md_to_dict(contents_md)
 
     def get_body_in_page(self, html_body: str) -> str:
         """page에서 본문(body) 추출
@@ -256,12 +257,19 @@ class IEP(SiteBase):
             str: page의 목차
         """
         soup = BeautifulSoup(html_body, 'lxml')  # 본문만 markdown으로 변환하기 위함
-        md = markdownify(soup.find(class_='entry-content').decode_contents(), strip=['a', 'em'], heading_style='ATX')
+        md = markdownify(
+            soup.find(class_='entry-content').decode_contents(),
+            strip=['a', 'em'],
+            heading_style='ATX',
+            bullets='-'
+        )
         # _contents_without_title()가 더 범용적으로 동작하지만 _contents_with_title()가 특정 상황에서 더 정확한 결과를 반환할 것이라고 예측
+        contents_md = ''
         if '### Table of Contents' in md:
-            return self._toc_with_title(md)
+            contents_md = self._toc_with_title(md)
         else:
-            return self._toc_without_title(md)
+            contents_md = self._toc_without_title(md)
+        return self._convert_md_to_dict(contents_md)
 
     def _body_with_title(self, md_body: str) -> str:
         """Table of Contents title이 존재하는 경우 body 파싱
