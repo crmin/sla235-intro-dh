@@ -215,8 +215,8 @@ class IEP(SiteBase):
         tocs = []
         toc_start = False  # list가 끝나면 중단하도록 하기 위한 flag
         for line in after_toc.split('\n'):
-            line = line.strip()
-            if len(line) > 0 and line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
+            stripped_line = line.strip()
+            if len(stripped_line) > 0 and stripped_line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
                 # *, -, +: ul / 0, 1, 2, .., 9: ol
                 tocs.append(line)
                 if not toc_start:
@@ -237,8 +237,8 @@ class IEP(SiteBase):
         tocs = []
         toc_start = False  # list가 끝나면 중단하도록 하기 위한 flag
         for line in md_body.split('\n'):
-            line = line.strip()
-            if len(line) > 0 and line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
+            stripped_line = line.strip()
+            if len(stripped_line) > 0 and stripped_line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
                 # *, -, +: ul / 0, 1, 2, .., 9: ol
                 tocs.append(line)
                 if not toc_start:
@@ -246,6 +246,28 @@ class IEP(SiteBase):
             elif toc_start:  # list가 시작되었는데 지금 읽은 문자열이 list가 아니라면 toc가 종료되었다고 판단
                 break
         return '\n'.join(tocs).strip()
+
+    def convert_ol_to_ul(self, md_body: str) ->  str:  # DEPRECATED
+        """md_body에서 ol(ordered list)를 ul(unordered list)로 변환
+
+        Args:
+            md_body (str): contents markdown body
+
+        Returns:
+            str: ul로 구성된 markdown list str
+        """
+        new_contents = []
+        for line in md_body.strip().split('\n'):
+            new_line = ''
+            for char_idx, char in enumerate(line):
+                if char in ('\t', ' '):
+                    new_line += char
+                    continue
+                new_line += '- '
+                new_line += line[char_idx:]
+                new_contents.append(new_line)
+                break
+        return '\n'.join(new_contents)
 
     def get_contents_in_page(self, html_body: str) -> str:
         """page에서 목차(table of contents)를 추출
@@ -258,7 +280,7 @@ class IEP(SiteBase):
         """
         soup = BeautifulSoup(html_body, 'lxml')  # 본문만 markdown으로 변환하기 위함
         md = markdownify(
-            soup.find(class_='entry-content').decode_contents(),
+            soup.find(class_='entry-content').decode_contents().replace('<ol>', '<ul>').replace('</ol>', '</ul>'),
             strip=['a', 'em'],
             heading_style='ATX',
             bullets='-'
