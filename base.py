@@ -1,10 +1,10 @@
+import json
 import sqlite3
 import time
 from abc import ABC, abstractmethod
 from io import StringIO
 
 import requests
-import yaml
 
 
 class SiteBase(ABC):
@@ -113,7 +113,7 @@ class SiteBase(ABC):
             resp = self.session.get(page_uri)
             title = self.get_title_in_page(resp.text)
             abstract = self.get_abstract_in_page(resp.text)
-            contents = self.get_contents_in_page(resp.text)
+            contents = json.dumps(self.get_contents_in_page(resp.text))
             body = self.get_body_in_page(resp.text)
             bibliography = self.get_bibliography_in_page(resp.text)
             cur.execute(
@@ -123,6 +123,30 @@ class SiteBase(ABC):
             conn.commit()
             time.sleep(0.25)
         print(self.__class__.__name__, 'All page scrapped.')
+
+    def _split_toc_lines(self, toc_content):
+        return toc_content.replace('\n-', '\n\n-').split('\n\n')
+
+    def _split_toc_depth(self, toc_lines):
+        toc_depths = toc_lines.split('\n')
+        current_depth = toc_depths[0]
+        next_depths = []
+        for next_depth in toc_depths[1:]:
+            next_depths.append(next_depth[1:])
+        return current_depth, '\n'.join(next_depths)
+
+    def _parse_toc(self, toc_content):
+        if toc_content.strip() == '':
+            return []
+
+        toc_list = []
+        for toc_lines in self._split_toc_lines(toc_content):
+            current_depth, next_depths = self._split_toc_depth(toc_lines)
+            toc_list.append({
+                'content': current_depth,
+                'subcontent': self._parse_toc(next_depths),
+            })
+        return toc_list
 
     def _convert_md_to_dict(self, md: str) -> dict:
         """markdown 형태의 list를 dict로 변환
@@ -137,6 +161,4 @@ class SiteBase(ABC):
         # 마지막에 개행 문자가 없으면 마지막 항목은 dict type으로 생성되지 않음
         # 마지막에 개행 문자가 여러개 있으면 yaml 파싱에서 에러 발생
         # 모든 trailing new line을 없앤 후 하나만 추가하는 방식으로 함
-        prettified_md = (md.strip() + '\n').replace('\n', ':\n').replace('\t', '  ')
-        yaml_list = yaml.load(StringIO(prettified_md), yaml.FullLoader)
-        return yaml_list
+        return self._parse_toc(md)
