@@ -128,6 +128,7 @@ class IEP(SiteBase):
                 links.append(link)
         if verbose:
             print('')
+            sys.stdout.flush()
         return links
 
     def get_title_in_page(self, html_body: str) -> str:

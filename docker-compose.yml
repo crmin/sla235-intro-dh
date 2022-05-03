@@ -1,0 +1,7 @@
+version: '3'
+services:
+  scrap:
+    build: .
+    container_name: dh-wiki-scrap
+    volumes:
+      - .:/root/
