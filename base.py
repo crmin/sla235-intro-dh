@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from io import StringIO
 
 import requests
+from colorama import Style
 
 
 class SiteBase(ABC):
@@ -94,7 +95,7 @@ class SiteBase(ABC):
         """
         pass
 
-    def scrap(self, path: str) -> None:
+    def scrap(self, path: str, color) -> None:
         """앞서 재정의된 메소드를 이용해서 스크래핑 진행
 
         Args:
@@ -108,11 +109,11 @@ class SiteBase(ABC):
 
         page_uris = self.get_page_uris()
         page_uris_len = len(page_uris)
-        print(self.__class__.__name__, f'Get {page_uris_len} page uris')
+        print(f'{color}{self.__class__.__name__} Get {page_uris_len} page uris{Style.RESET_ALL}')
         sys.stdout.flush()
 
         for idx, page_uri in enumerate(page_uris):
-            print(self.__class__.__name__, f'> [{idx + 1}/{page_uris_len}] Scrap {page_uri}')
+            print(f'{color}{self.__class__.__name__} > [{idx + 1}/{page_uris_len}] Scrap {page_uri}{Style.RESET_ALL}')
             sys.stdout.flush()
             resp = self.session.get(page_uri)
             title = self.get_title_in_page(resp.text)
@@ -126,7 +127,7 @@ class SiteBase(ABC):
             )
             conn.commit()
             time.sleep(0.25)
-        print(self.__class__.__name__, 'All page scrapped.')
+        print(f'{color}{self.__class__.__name__} All page scrapped.{Style.RESET_ALL}')
         sys.stdout.flush()
 
     def _split_toc_lines(self, toc_content):
