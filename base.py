@@ -1,5 +1,6 @@
 import json
 import sqlite3
+import sys
 import time
 from abc import ABC, abstractmethod
 from io import StringIO
@@ -100,6 +101,7 @@ class SiteBase(ABC):
             path (str): 스크래핑 결과가 저장될 파일 경로, sqlite3로 저장됨
         """
         print(self.__class__.__name__, 'Create database file')
+        sys.stdout.flush()
         conn = sqlite3.connect(path, isolation_level=None)
         cur = conn.cursor()
         cur.execute(self.TABLE_CREATION_SQL)
@@ -107,9 +109,11 @@ class SiteBase(ABC):
         page_uris = self.get_page_uris()
         page_uris_len = len(page_uris)
         print(self.__class__.__name__, f'Get {page_uris_len} page uris')
+        sys.stdout.flush()
 
         for idx, page_uri in enumerate(page_uris):
             print(self.__class__.__name__, f'> [{idx + 1}/{page_uris_len}] Scrap {page_uri}')
+            sys.stdout.flush()
             resp = self.session.get(page_uri)
             title = self.get_title_in_page(resp.text)
             abstract = self.get_abstract_in_page(resp.text)
@@ -123,6 +127,7 @@ class SiteBase(ABC):
             conn.commit()
             time.sleep(0.25)
         print(self.__class__.__name__, 'All page scrapped.')
+        sys.stdout.flush()
 
     def _split_toc_lines(self, toc_content):
         return toc_content.replace('\n-', '\n\n-').split('\n\n')
