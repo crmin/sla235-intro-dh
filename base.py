@@ -4,6 +4,7 @@ import sys
 import time
 from abc import ABC, abstractmethod
 from io import StringIO
+from itertools import count
 
 import requests
 from colorama import Style
@@ -115,7 +116,14 @@ class SiteBase(ABC):
         for idx, page_uri in enumerate(page_uris):
             print(f'{color}{self.__class__.__name__} > [{idx + 1}/{page_uris_len}] Scrap {page_uri}{Style.RESET_ALL}')
             sys.stdout.flush()
-            resp = self.session.get(page_uri)
+            for try_count in count(1):  # 5초 이내에 응답을 받지 못해서 timeout이 발생하면 재시도
+                try:
+                    resp = self.session.get(page_uri, timeout=5)
+                except requests.exceptions.ReadTimeout:
+                    print(f'{color}{self.__class__.__name__} Timeout: {page_uri}, try: {try_count}{Style.RESET_ALL}')
+                    time.sleep(0.25)
+                    continue
+                break
             title = self.get_title_in_page(resp.text)
             abstract = self.get_abstract_in_page(resp.text)
             contents = json.dumps(self.get_contents_in_page(resp.text))
