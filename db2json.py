@@ -10,18 +10,13 @@ def read_data_from_db(path):
     return [dict(zip(('title', 'abstract', 'contents'), each)) for each in data]
 
 def reformat(db_list):
-    data = {}
+    data = []
     for each in db_list:
-        title = each['title']
-
-        if title in data:
-            print(f'[WARN] duplicated title: {title}')
-            sys.stdout.flush()
-
-        data[title] = {
+        data.append({
+            'title': each['title'],
             'contents': json.loads(each['contents']),
             'abstract': each['abstract'].strip(),
-        }
+        })
     return data
 
 def main():
