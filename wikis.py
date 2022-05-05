@@ -141,7 +141,14 @@ class IEP(SiteBase):
             str: page의 title
         """
         soup = BeautifulSoup(html_body, 'lxml')
-        return soup.find(class_='entry-content').find('h1').text
+        md = markdownify(
+            soup.find(class_='entry-content').decode_contents(),
+            strip=['a', 'em', 'img'],
+            heading_style='ATX'
+        )
+        for line in md.split('\n'):
+            if line.strip().startswith('#'):  # 문서 본문 중 첫번째로 나오는 title을 가져옴
+                return line.strip().strip('#').strip()
 
     def _abstract_with_title(self, md_body: str) -> str:
         """Table of Contents title이 있어서 abtract의 끝을 분명히 알 수 있는 경우에 대한 파싱
@@ -155,7 +162,7 @@ class IEP(SiteBase):
         before_toc, _ = md_body.split('### Table of Contents')
         lines = []
         for line in before_toc.split('\n'):
-            if line.strip().startswith('# '):  # page title
+            if line.strip().startswith('#'):  # page title
                 continue
             lines.append(line)
         return '\n'.join(lines)
@@ -174,7 +181,7 @@ class IEP(SiteBase):
         lines = []
         for line in md_body.split('\n'):
             line = line.strip()
-            if line.startswith('# '):  # page title
+            if line.startswith('#'):  # page title
                 continue
             if len(line) > 0 and line[0] in ('*', '-', '+') + tuple(string.digits):  # list in markdown
                 # *, -, +: ul / 0, 1, 2, .., 9: ol
